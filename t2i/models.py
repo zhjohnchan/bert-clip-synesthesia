@@ -163,7 +163,6 @@ class Text2ImageModel(nn.Module):
         cache = {} if use_cache else None
         image = torch.full((bs, 1), self.num_image_tokens).to(next(self.parameters()).device)
         for cur_len in range(self.image_seq_len):
-            print(cur_len)
             logits = self.forward_with_cond_scale(text, image, cond_scale=cond_scale, cache=cache)
             logits = logits[:, -1, :]
             filtered_logits = top_k(logits, thres=filter_thres)
