@@ -37,9 +37,11 @@ class ImageTextDataset(Dataset):
 
 
 def main():
+    device = "cuda"
+
     # model
-    vae = OpenAIDiscreteVAE()
-    model = Text2ImageModel(dim=256, depth=6, vae=vae)
+    vae = OpenAIDiscreteVAE().to(device)
+    model = Text2ImageModel(dim=256, depth=6, vae=vae).to(device)
 
     # data
     train_dataset, val_dataset = ImageTextDataset(split="train"), ImageTextDataset(split="val")
@@ -51,18 +53,16 @@ def main():
     # training
     for epoch in range(30):
         model.train()
-        # for batch in train_dataloader:
-        #     texts, images = batch
-        #     loss = model(text=texts, image=images, return_loss=True)
+        for batch in train_dataloader:
+            texts, images = batch[0], batch[1].to(device)
+            loss = model(text=texts, image=images, return_loss=True)
 
         model.eval()
         with torch.no_grad():
             for batch in val_dataloader:
-                texts, images = batch
+                texts, images = batch[0], batch[1].to(device)
                 loss = model(text=texts, image=images, return_loss=True)
-                generated_images = model.generate_images(text=texts)
-                import pdb
-                pdb.set_trace()
+                generated_images = model.generate_images(text=texts, use_cache=True)
 
 
 if __name__ == '__main__':
