@@ -79,7 +79,7 @@ def main():
         vae = VQGanVAE().to(device)
 
     # attention types
-    attn_group = ['axial_row', 'axial_row', 'axial_row', 'axial_col'] # row:col = 3:1
+    attn_group = ['axial_row', 'axial_col', 'axial_row', 'axial_row'] # row:col = 3:1
     attn_types = attn_group * 3 + ['conv_like']
 
     # main model
@@ -96,7 +96,7 @@ def main():
     train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4) 
     val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=4)
 
-    # optimizer
+    # optimizer and scheduler
     init_lr = 1e-3
     optimizer = torch.optim.AdamW(model.parameters(), lr=init_lr, weight_decay=0.)
     warmup_epochs = 5
