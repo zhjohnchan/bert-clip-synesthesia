@@ -1,4 +1,5 @@
 from math import log2, sqrt
+from typing import Iterable
 
 import torch
 import torch.nn.functional as F
@@ -8,6 +9,9 @@ from dalle_pytorch.transformer import Transformer, DivideMax
 from dalle_pytorch.vae import OpenAIDiscreteVAE, VQGanVAE
 from einops import rearrange
 from torch import nn, einsum
+
+from transformers import BertTokenizer, BertModel
+from transformers import CLIPTokenizer, CLIPTextModel
 
 
 # helpers
@@ -80,7 +84,7 @@ class Text2ImageModel(nn.Module):
             attn_dropout=0.,
             ff_dropout=0,
             t2i=False,
-            projection_layer=None,
+            LM_name=None,
             text_embdim=0,
             sparse_attn=False,
             attn_types=None,
@@ -139,7 +143,13 @@ class Text2ImageModel(nn.Module):
 
         self.stable = stable
         self.t2i = t2i
-
+        if LM_name == 'bert':
+            self.LM = BertModel.from_pretrained("bert-base-uncased")
+            self.LM_tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        elif LM_name == 'clip':
+            self.LM = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
+            self.LM_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+        
         if stable:
             self.norm_by_max = DivideMax(dim=-1)
 
@@ -151,6 +161,7 @@ class Text2ImageModel(nn.Module):
         self.image_emb = nn.Embedding(num_image_tokens + 1, dim)
         self.loss_img_weight = loss_img_weight
 
+        set_requires_grad(self.LM, False)
         set_requires_grad(self.vae, False)  # freeze VAE from being trained
         set_requires_grad(self.projection_layer, t2i) if t2i else None
         set_requires_grad(self.image_emb, (not t2i))
@@ -177,7 +188,7 @@ class Text2ImageModel(nn.Module):
         cache = {} if use_cache else None
 
         if self.t2i: # stage 2
-            # serves as placeholder, will not be used and will be discarded in line 192
+            # serves as a placeholder, will not be used and will be discarded in line 203
             image = torch.empty((bs, 1), dtype=torch.long).to(next(self.parameters()).device) # (bs, 1), long
         else: # stage 1
             image = torch.full((bs, 1), self.num_image_tokens).to(next(self.parameters()).device)
@@ -225,6 +236,7 @@ class Text2ImageModel(nn.Module):
             image = self.vae.get_codebook_indices(image)
             labels = image.clone()
             if self.t2i: # stage 2, get corresponding embeddings then concat
+                text = self.get_embedding(text, self.LM, self.LM_tokenizer, image.device)
                 projected_text_emb = self.projection_layer(text)
                 bos = projected_text_emb # (bs, 1, dim)
                 image_emb = self.image_emb(image[:, :-1]) # (bs, img_seqlen-1, dim)
@@ -238,6 +250,7 @@ class Text2ImageModel(nn.Module):
         else: # invoked in generate_image()
             if self.t2i: # stage 2
                 _, cur_len = image.shape # (bs, current_length)
+                text = self.get_embedding(text, self.LM, self.LM_tokenizer, image.device)
                 tokens = self.projection_layer(text) # (bs, 1, dim)
                 if cur_len > 1: # has image token
                     image_emb = self.image_emb(image[:, 1:]) # (bs, curlen-1, dim)
@@ -272,3 +285,12 @@ class Text2ImageModel(nn.Module):
         logits = rearrange(logits, 'b n c -> b c n')
         loss = F.cross_entropy(logits, labels)
         return loss
+
+    @torch.no_grad()
+    def get_embedding(self, text, model, tokenizer, device):
+        if not isinstance(text, Iterable):
+            text = [text]
+        inputs = tokenizer(text, padding=True, return_tensors="pt").to(device)
+        outputs = model(**inputs)
+        pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        return pooled_output.unsqueeze(1) # (bs, 1, dim), (768 for bert; 512 for clip)
