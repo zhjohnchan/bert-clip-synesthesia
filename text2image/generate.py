@@ -135,6 +135,7 @@ def main():
     top_p = 1.0
     batch_size = 100
     temperature = 1.0
+    num = 1000
 
     # un-tuned
     # text_model_name = "bert-large-uncased"
@@ -146,7 +147,7 @@ def main():
     save_dir = "generated_images/" + ckpt_path.replace("/", "_")
     model = load_model(text_model_name, ckpt_path)
 
-    real_paths, fake_paths, texts = get_test_data(save_dir)
+    real_paths, fake_paths, texts = get_test_data(save_dir, num=num)
     for i in tqdm(range(len(fake_paths) // batch_size)):
         log = sample_unconditional(texts[i * batch_size:(i + 1) * batch_size],
                                    model=model, batch_size=batch_size, temperature=temperature,
