@@ -1,13 +1,14 @@
 import os
+import sys
 import time
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torchvision
 from PIL import Image
 from einops import repeat
 from omegaconf import OmegaConf
+from tqdm import tqdm
 from transformers import top_k_top_p_filtering
 
 from cond_transformer import Net2NetTransformer
@@ -70,7 +71,11 @@ def sample_unconditional(text, model, batch_size, steps=256, temperature=None, t
     if isinstance(text, str):
         text = [text] * batch_size
     elif isinstance(text, list):
-        assert len(text) == batch_size
+        if len(text) != batch_size:
+            import pdb
+            pdb.set_trace()
+            batch_size = len(text)
+            print("LAST BATCH!!")
     else:
         print("No text prompts.")
 
@@ -90,13 +95,10 @@ def sample_unconditional(text, model, batch_size, steps=256, temperature=None, t
     return log
 
 
-def save_images(images, save_dir, filenames):
-    root = os.path.join(save_dir, "images")
-    os.makedirs(root, exist_ok=True)
-    for image, filename in zip(images, filenames):
+def save_images(images, save_paths):
+    for image, save_path in zip(images, save_paths):
         x = chw_to_pillow(image)
-        path = os.path.join(root, filename)
-        x.save(path)
+        x.save(save_path)
 
 
 def load_model(text_model_name, ckpt_path, learning_rate=0.0625):
@@ -110,30 +112,47 @@ def load_model(text_model_name, ckpt_path, learning_rate=0.0625):
     return model
 
 
+def get_test_data(save_dir, num=500):
+    root = "data/celebahq"
+    with open("data/celebahqvalidation.txt", "r") as f:
+        relpaths = f.read().splitlines()[:num]
+    real_paths = [os.path.join(root, f'{int(relpath[:-4])}.jpg')
+                  for relpath in relpaths for _ in range(10)]
+    fake_paths = [os.path.join(save_dir, "images", f'{int(relpath[:-4])}_{i}.jpg')
+                  for relpath in relpaths for i in range(10)]
+    texts = [t for relpath in relpaths
+             for t in open(os.path.join(f'{root}-caption', f'{int(relpath[:-4])}.txt')).read().splitlines()]
+    os.makedirs(os.path.join(save_dir, "images"), exist_ok=True)
+    fout = open(os.path.join(save_dir, "records.txt"), "wt")
+    for real_path, fake_path, text in zip(real_paths, fake_paths, texts):
+        fout.write("\t".join([real_path, fake_path, text]) + "\n")
+    return real_paths, fake_paths, texts
+
+
 @torch.no_grad()
 def main():
     top_k = 250
     top_p = 1.0
-    batch_size = 1
+    batch_size = 100
     temperature = 1.0
 
     # un-tuned
     # text_model_name = "bert-large-uncased"
     # ckpt_path = "2021-04-23T18-11-19_celebahq_transformer/checkpoints/last.ckpt"
 
-    # bert-large-uncased
-    text_model_name = "bert-large-uncased"
-    ckpt_path = "outputs/bert-large-uncased/last.ckpt"
+    text_model_name = sys.argv[1]
+    ckpt_path = sys.argv[2]
 
     save_dir = "generated_images/" + ckpt_path.replace("/", "_")
-
     model = load_model(text_model_name, ckpt_path)
 
-    for i in range(10):
-        log = sample_unconditional("The person has high cheekbones, and pointy nose. She is wearing lipstick.",
+    real_paths, fake_paths, texts = get_test_data(save_dir)
+    for i in tqdm(range(len(fake_paths) // batch_size)):
+        log = sample_unconditional(texts[i * batch_size:(i + 1) * batch_size],
                                    model=model, batch_size=batch_size, temperature=temperature,
                                    top_k=top_k, top_p=top_p)
-        save_images(log["samples"], save_dir=save_dir, filenames=[f"{i}.png"])
+        assert len(log["samples"]) == len(fake_paths[i * batch_size:(i + 1) * batch_size])
+        save_images(log["samples"], save_paths=fake_paths[i * batch_size:(i + 1) * batch_size])
 
 
 if __name__ == '__main__':
