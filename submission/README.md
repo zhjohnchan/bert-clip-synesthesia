@@ -44,7 +44,7 @@ python main.py
 ### 3.1 Prepare the data
 
 Download from [this link](https://drive.google.com/drive/folders/1eVrGKfkbw7bh9xPcX8HJa-qWQTD9aWvf) and put on
-the `data/cxc` folder.
+the `data/celebahq` and `data/celebahq-caption` folders.
 
 ### 3.2: Install taming-transformers
 
