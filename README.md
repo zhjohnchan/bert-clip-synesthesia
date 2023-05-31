@@ -30,7 +30,7 @@ bash run_glue_clip.sh
 
 ### 2.1 Prepare the data
 
-Download from [this link](https://github.com/google-research-datasets/Crisscrossed-Captions) and put on
+Download from [this link](https://github.com/google-research-datasets/Crisscrossed-Captions) and put them in
 the `data/cxc` folder.
 
 ### 2.2 Run the textual similarity measure
@@ -43,7 +43,7 @@ python main.py
 
 ### 3.1 Prepare the data
 
-Download from [this link](https://drive.google.com/drive/folders/1eVrGKfkbw7bh9xPcX8HJa-qWQTD9aWvf) and put on
+Download from [this link](https://drive.google.com/drive/folders/1eVrGKfkbw7bh9xPcX8HJa-qWQTD9aWvf) and put them in
 the `data/celebahq` and `data/celebahq-caption` folders.
 
 ### 3.2: Install taming-transformers
@@ -55,12 +55,11 @@ pip install -e .
 
 ### 3.3: Training
 
-```angular2html
-model=bert-base-uncased
-python train.py ${model}
+<!-- ```angular2html
+bash train.sh
 ```
 
-or
+or -->
 
 ```angular2html
 bash train.sh
