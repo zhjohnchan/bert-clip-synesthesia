@@ -1,4 +1,5 @@
 # On the Difference of BERT-style and CLIP-style Text Encoders
+This is the official implementation of [On the Difference of BERT-style and CLIP-style Text Encoders]() at Findings of ACL-2023.
 
 ## Requirements
 
@@ -12,7 +13,7 @@
 * datasets==2.8.1.dev0
 * evaluate==0.4.0
 
-## Study 1: Glue Benchmarking
+## Experiment 1: GLUE Benchmarking
 
 ### 1.1: BERT-style Text Encoders
 
@@ -26,7 +27,7 @@ bash run_glue_bert.sh
 bash run_glue_clip.sh
 ```
 
-## Study 2: Textual Similarity (STS-V and STS-L)
+## Experiment 2: Textual Similarity
 
 ### 2.1 Prepare the data
 
@@ -39,12 +40,11 @@ the `data/cxc` folder.
 python main.py
 ```
 
-## Study 3: Text-to-Image Generation
+## Experiment 3: Text-to-Image Generation
 
 ### 3.1 Prepare the data
 
-Download from [this link](https://drive.google.com/drive/folders/1eVrGKfkbw7bh9xPcX8HJa-qWQTD9aWvf) and put them in
-the `data/celebahq` and `data/celebahq-caption` folders.
+Download the dataset from [this link](https://drive.google.com/drive/folders/1eVrGKfkbw7bh9xPcX8HJa-qWQTD9aWvf) and put them in the `data/celebahq` and `data/celebahq-caption` folders.
 
 ### 3.2: Install taming-transformers
 
@@ -54,13 +54,6 @@ pip install -e .
 ```
 
 ### 3.3: Training
-
-<!-- ```angular2html
-bash train.sh
-```
-
-or -->
-
 ```angular2html
 bash train.sh
 ```
