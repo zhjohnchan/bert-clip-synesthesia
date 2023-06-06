@@ -63,3 +63,20 @@ bash train.sh
 ```angular2html
 bash generate.sh
 ```
+
+## Citations
+
+If you use or extend our work, please cite our paper at Findings of ACL-2023.
+```
+@inproceedings{chen-acl-2023-synesthesia,
+    title = "On the Difference of BERT-style and CLIP-style Text Encoders",
+    author = "Chen, Zhihong and
+    Chen, Guiming Hardy and
+    Diao, Shizhe and
+    Wan, Xiang and
+    Wang, Benyou",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2023",
+    month = july,
+    year = "2023",
+}
+```
