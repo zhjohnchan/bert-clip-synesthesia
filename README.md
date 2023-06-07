@@ -1,5 +1,5 @@
 # On the Difference of BERT-style and CLIP-style Text Encoders
-This is the official implementation of [On the Difference of BERT-style and CLIP-style Text Encoders]() at Findings of ACL-2023.
+This is the official implementation of [On the Difference of BERT-style and CLIP-style Text Encoders](https://arxiv.org/abs/2306.03678) at Findings of ACL-2023.
 
 ## Requirements
 
